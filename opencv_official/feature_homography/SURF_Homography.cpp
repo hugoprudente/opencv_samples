@@ -2,6 +2,7 @@
  * @file SURF_Homography
  * @brief SURF detector + descriptor + FLANN Matcher + FindHomography
  * @author A. Huaman
+ * @coauthor H. Prudente  
  */
 
 #include "opencv2/opencv_modules.hpp"
