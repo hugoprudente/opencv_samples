@@ -1,28 +1,17 @@
 /**
  * @file SURF_Homography
  * @brief SURF detector + descriptor + FLANN Matcher + FindHomography
- * @author A. Huaman
- * @coauthor H. Prudente  
+ * @author A. Huaman, H. Prudente
  */
 
-#include "opencv2/opencv_modules.hpp"
-#include <stdio.h>
-
-#ifndef HAVE_OPENCV_NONFREE
-
-int main(int, char**)
-{
-    printf("The sample requires nonfree module that is not available in your OpenCV distribution.\n");
-    return -1;
-}
-
-#else
-
+# include "opencv2/opencv_modules.hpp"
+# include <stdio.h>
 # include "opencv2/core/core.hpp"
+# include "opencv2/imgproc/imgproc.hpp"
+# include "opencv2/xfeatures2d/nonfree.hpp"
 # include "opencv2/features2d/features2d.hpp"
 # include "opencv2/highgui/highgui.hpp"
 # include "opencv2/calib3d/calib3d.hpp"
-# include "opencv2/nonfree/features2d.hpp"
 
 using namespace cv;
 
@@ -46,20 +35,15 @@ int main( int argc, char** argv )
   //-- Step 1: Detect the keypoints using SURF Detector
   int minHessian = 400;
 
-  SurfFeatureDetector detector( minHessian );
+  //Reference, http://answers.opencv.org/question/55247/image-registration-opencv-300/?answer=55249#post-id-55249
+  Ptr<xfeatures2d::SURF> surf = xfeatures2d::SURF::create(minHessian);
 
+  // note, that it's also far more efficient, to compute keypoints and descriptors in one go.
   std::vector<KeyPoint> keypoints_object, keypoints_scene;
-
-  detector.detect( img_object, keypoints_object );
-  detector.detect( img_scene, keypoints_scene );
-
-  //-- Step 2: Calculate descriptors (feature vectors)
-  SurfDescriptorExtractor extractor;
-
   Mat descriptors_object, descriptors_scene;
 
-  extractor.compute( img_object, keypoints_object, descriptors_object );
-  extractor.compute( img_scene, keypoints_scene, descriptors_scene );
+  surf->detectAndCompute(img_object, Mat(), keypoints_object, descriptors_object);
+  surf->detectAndCompute(img_scene, Mat(), keypoints_scene,  descriptors_scene);
 
   //-- Step 3: Matching descriptor vectors using FLANN matcher
   FlannBasedMatcher matcher;
@@ -89,7 +73,7 @@ int main( int argc, char** argv )
   Mat img_matches;
   drawMatches( img_object, keypoints_object, img_scene, keypoints_scene,
                good_matches, img_matches, Scalar::all(-1), Scalar::all(-1),
-               vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+               std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 
 
   //-- Localize the object from img_1 in img_2
@@ -122,7 +106,9 @@ int main( int argc, char** argv )
   line( img_matches, scene_corners[3] + offset, scene_corners[0] + offset, Scalar( 0, 255, 0), 4 );
 
   //-- Show detected matches
-  imshow( "Good Matches & Object detection", img_matches );
+  cv::Mat inner_dst;
+  resize(img_matches, inner_dst, cv::Size(), 0.3, 0.3);
+  imshow( "Good Matches & Object detection", inner_dst );
 
   waitKey(0);
 
@@ -134,5 +120,3 @@ int main( int argc, char** argv )
  */
 void readme()
 { printf(" Usage: ./SURF_Homography <img1> <img2>\n"); }
-
-#endif
