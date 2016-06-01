@@ -14,9 +14,7 @@ The main parts of stitching algorithm are
 
 ## What was fixed?
 
-This code is originally coded for OpenCV 2.4.x, and now is fixed to work with OpenCV 3.1.x
-
-## Explanation
+This code is originally coded for OpenCV 2.4.x, and now is fixed to work with OpenCV 3.1.x.
 
 ## How to use?
 

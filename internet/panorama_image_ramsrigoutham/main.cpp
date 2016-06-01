@@ -1,10 +1,16 @@
+/**
+ * @file main
+ * @brief Stitch two images into one
+ * @author R. Goutham, H. Prudente
+ */
+
 #include <stdio.h>
 #include <iostream>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include "opencv2/nonfree/nonfree.hpp"
+#include "opencv2/xfeatures2d/nonfree.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
@@ -36,20 +42,15 @@ int main( int argc, char** argv )
     //-- Step 1: Detect the keypoints using SURF Detector
     int minHessian = 400;
 
-    SurfFeatureDetector detector( minHessian );
+    //Reference, http://answers.opencv.org/question/55247/image-registration-opencv-300/?answer=55249#post-id-55249
+    Ptr<xfeatures2d::SURF> surf = xfeatures2d::SURF::create(minHessian);
 
-    std::vector< KeyPoint > keypoints_object, keypoints_scene;
-
-    detector.detect( gray_image1, keypoints_object );
-    detector.detect( gray_image2, keypoints_scene );
-
-    //-- Step 2: Calculate descriptors (feature vectors)
-    SurfDescriptorExtractor extractor;
-
+    // note, that it's also far more efficient, to compute keypoints and descriptors in one go.
+    std::vector<KeyPoint> keypoints_object, keypoints_scene;
     Mat descriptors_object, descriptors_scene;
 
-    extractor.compute( gray_image1, keypoints_object, descriptors_object );
-    extractor.compute( gray_image2, keypoints_scene, descriptors_scene );
+    surf->detectAndCompute(gray_image1, Mat(), keypoints_object, descriptors_object);
+    surf->detectAndCompute(gray_image2, Mat(), keypoints_scene,  descriptors_scene);
 
     //-- Step 3: Matching descriptor vectors using FLANN matcher
     FlannBasedMatcher matcher;
@@ -87,6 +88,7 @@ int main( int argc, char** argv )
 
     // Find the Homography Matrix
     Mat H = findHomography( obj, scene, CV_RANSAC );
+
     // Use the Homography Matrix to warp the images
     cv::Mat result;
     warpPerspective(image1,result,H,cv::Size(image1.cols+image2.cols,image1.rows));
